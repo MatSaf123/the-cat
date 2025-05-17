@@ -1,0 +1,25 @@
+#cat {
+    height: 32px;
+    width: 32px;
+    background: url('sprites/cat_sleep.png'); /* Initialize cat in sleeping animation */
+
+    image-rendering: pixelated;
+
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    scale: 300%;
+
+    animation-name: cat-sleep; 
+    animation-duration: 2s;
+    animation-timing-function: steps(4);
+    animation-iteration-count: infinite;
+}
+
+@keyframes cat-sleep {
+  to { background-position: 128px }
+}
+
+@keyframes cat-run{
+  to { background-position: 256px }
+}
