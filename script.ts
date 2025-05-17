@@ -1,42 +1,85 @@
 enum StateFlagEnum {
-  CatEnabled,
+  CatState,
   CursorCoordX,
   CursorCoordY,
 }
 
+enum CatStateEnum {
+  Sleeping,
+  Running,
+  Idle,
+}
+
 const STATE = {
-  [StateFlagEnum.CatEnabled]: false, // Cat sleeps by default - a very cat thing to do
+  [StateFlagEnum.CatState]: CatStateEnum.Sleeping, // Cat sleeps by default - a very cat thing to do
   [StateFlagEnum.CursorCoordX]: 0,
   [StateFlagEnum.CursorCoordY]: 0,
 } satisfies Record<StateFlagEnum, unknown>;
 
+/**
+ * Changes and renders cats animation and the displayed info text
+ */
+function renderCatState(state: CatStateEnum) {
+  const catStateText = document.getElementById("cat-state-text");
+  const cat = document.getElementById("cat");
+
+  switch (state) {
+    case CatStateEnum.Sleeping: {
+      catStateText.innerHTML = "Cat is sleeping...";
+
+      // Set animation to sleeping
+      cat.style.background = "url('sprites/cat_sleep.png')";
+      cat.style.animationName = "cat-sleep";
+      cat.style.animationDuration = "3s";
+      cat.style.animationTimingFunction = "steps(4)";
+      cat.style.animationIterationCount = "infinite";
+      return;
+    }
+    case CatStateEnum.Running: {
+      catStateText.innerHTML = "Cat is running!";
+
+      // Set animation to running
+      cat.style.background = "url('sprites/cat_run.png')";
+      cat.style.animationName = "cat-run";
+      cat.style.animationDuration = "1.5s";
+      cat.style.animationTimingFunction = "steps(8)";
+      cat.style.animationIterationCount = "infinite";
+      return;
+    }
+    case CatStateEnum.Idle: {
+      catStateText.innerHTML = "Cat is waiting. Move your cursor!";
+
+      // Pick one of the idle animations
+      const items = ["cat_idle_1.png", "cat_idle_2.png", "cat_idle_3.png"];
+      const animationName = items[Math.floor(Math.random() * items.length)];
+
+      cat.style.background = `url('sprites/${animationName}')`;
+      cat.style.animationName = "cat-idle";
+      cat.style.animationDuration = "3s";
+      cat.style.animationTimingFunction = "steps(4)";
+      cat.style.animationIterationCount = "infinite";
+      return;
+    }
+    default: {
+      throw new Error(`State "${state}" not recognized`);
+    }
+  }
+}
+
 /** Handle 'toggle' button click */
 function handleToggleButton(): void {
   // Toggle cat's behavior
-  const oldCatState = STATE[StateFlagEnum.CatEnabled];
-  STATE[StateFlagEnum.CatEnabled] = !oldCatState;
+  const currentState = STATE[StateFlagEnum.CatState];
 
-  // Update elements and animation
-  const catStateText = document.getElementById("cat-state-text");
-  const cat = document.getElementById("cat");
-  if (STATE[StateFlagEnum.CatEnabled]) {
-    catStateText.innerHTML = "Cat is running!";
-
-    // Set animation to running
-    cat.style.background = "url('sprites/cat_run.png')";
-    cat.style.animationName = "cat-run";
-    cat.style.animationDuration = "1.5s";
-    cat.style.animationTimingFunction = "steps(8)";
-    cat.style.animationIterationCount = "infinite";
+  if (
+    currentState === CatStateEnum.Running ||
+    currentState === CatStateEnum.Idle
+  ) {
+    STATE[StateFlagEnum.CatState] = CatStateEnum.Sleeping;
+    renderCatState(CatStateEnum.Sleeping);
   } else {
-    catStateText.innerHTML = "Cat is sleeping...";
-
-    // Set animation to sleeping
-    cat.style.background = "url('sprites/cat_sleep.png')";
-    cat.style.animationName = "cat-sleep";
-    cat.style.animationDuration = "3s";
-    cat.style.animationTimingFunction = "steps(4)";
-    cat.style.animationIterationCount = "infinite";
+    STATE[StateFlagEnum.CatState] = CatStateEnum.Running;
+    renderCatState(CatStateEnum.Running);
   }
 }
 
@@ -47,22 +90,48 @@ addEventListener("pointermove", (event) => {
   STATE[StateFlagEnum.CursorCoordY] = cursorCoords.y;
 });
 
-/** If cat is not sleeping, make it run towards the cursor*/
+/** If cat is not asleep or idle, make it run towards the cursor*/
 function makeCatAction(): void {
   const cat = document.getElementById("cat");
-  if (STATE[StateFlagEnum.CatEnabled]) {
+
+  if (STATE[StateFlagEnum.CatState] === CatStateEnum.Sleeping) {
+    // No action, cat sleeps
+    return;
+  }
+
+  // Check if cat should move or if it's idle
+  const cursorCoords = {
+    x: STATE[StateFlagEnum.CursorCoordX],
+    y: STATE[StateFlagEnum.CursorCoordY],
+  };
+
+  // Turn them from `<number>px` strings into numbers
+  const catCurrentCoords = {
+    x: Number(cat.style.left.split("px")[0]),
+    y: Number(cat.style.top.split("px")[0]),
+  };
+
+  const distanceToCursor = Math.sqrt(
+    (catCurrentCoords.x - cursorCoords.x) ** 2 +
+      (catCurrentCoords.y - cursorCoords.y) ** 2
+  );
+
+  // Radius from cursor within which cat goes to idle state instead of running
+  const IDLE_RADIUS = 20.0;
+
+  if (distanceToCursor <= IDLE_RADIUS) {
+    // Cat goes idle and chills for a bit
+    if (STATE[StateFlagEnum.CatState] !== CatStateEnum.Idle) {
+      STATE[StateFlagEnum.CatState] = CatStateEnum.Idle;
+      renderCatState(CatStateEnum.Idle);
+    }
+    return;
+  } else {
     // Bring cat closer to the cursor
-
-    const cursorCoords = {
-      x: STATE[StateFlagEnum.CursorCoordX],
-      y: STATE[StateFlagEnum.CursorCoordY],
-    };
-
-    // Turn them from `<number>px` strings into numbers
-    const catCurrentCoords = {
-      x: Number(cat.style.left.split("px")[0]),
-      y: Number(cat.style.top.split("px")[0]),
-    };
+    if (STATE[StateFlagEnum.CatState] !== CatStateEnum.Running) {
+      STATE[StateFlagEnum.CatState] = CatStateEnum.Running;
+      renderCatState(CatStateEnum.Running);
+    }
 
     const vector = {
       x: cursorCoords.x - catCurrentCoords.x,
@@ -91,8 +160,6 @@ function makeCatAction(): void {
         cat.style.transform = "scaleX(1)";
       }
     }
-  } else {
-    // Cat sleeps, no action. Zzz
   }
 }
 
