@@ -100,15 +100,18 @@ function makeCatAction() {
         x: STATE[StatePartEnum.CursorCoordX],
         y: STATE[StatePartEnum.CursorCoordY],
     };
-    // Turn them from `<number>px` strings into numbers
+    // Turn coords from `<number>px` strings into numbers
     var catCurrentCoords = {
         x: Number(cat.style.left.split("px")[0]),
         y: Number(cat.style.top.split("px")[0]),
     };
     var distanceToCursor = Math.sqrt(Math.pow((catCurrentCoords.x - cursorCoords.x), 2) +
         Math.pow((catCurrentCoords.y - cursorCoords.y), 2));
-    // Radius from cursor within which cat goes to idle state instead of running
-    var IDLE_RADIUS = 20.0;
+    // Radius from cursor within which cat goes to idle state instead of running.
+    // We want to increase the radius if cat is already idle - this results in a nice
+    // looking effect where cat waits for cursor to get a little further before getting up again
+    var idleModifier = STATE[StatePartEnum.CatState] === CatStateEnum.Idle ? 3.0 : 1.0;
+    var IDLE_RADIUS = 20.0 * idleModifier;
     if (distanceToCursor <= IDLE_RADIUS) {
         // Cat goes idle and chills for a bit
         if (STATE[StatePartEnum.CatState] !== CatStateEnum.Idle) {

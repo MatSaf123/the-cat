@@ -114,7 +114,7 @@ function makeCatAction(): void {
     y: STATE[StatePartEnum.CursorCoordY],
   };
 
-  // Turn them from `<number>px` strings into numbers
+  // Turn coords from `<number>px` strings into numbers
   const catCurrentCoords = {
     x: Number(cat.style.left.split("px")[0]),
     y: Number(cat.style.top.split("px")[0]),
@@ -125,8 +125,12 @@ function makeCatAction(): void {
       (catCurrentCoords.y - cursorCoords.y) ** 2
   );
 
-  // Radius from cursor within which cat goes to idle state instead of running
-  const IDLE_RADIUS = 20.0;
+  // Radius from cursor within which cat goes to idle state instead of running.
+  // We want to increase the radius if cat is already idle - this results in a nice
+  // looking effect where cat waits for cursor to get a little further before getting up again
+  const idleModifier =
+    STATE[StatePartEnum.CatState] === CatStateEnum.Idle ? 3.0 : 1.0;
+  const IDLE_RADIUS = 20.0 * idleModifier;
 
   if (distanceToCursor <= IDLE_RADIUS) {
     // Cat goes idle and chills for a bit
