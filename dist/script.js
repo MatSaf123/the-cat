@@ -75,12 +75,10 @@ function changeCatRenderState() {
         }
     }
 }
-/** Handle 'toggle' button click */
+/** Handle 'Toggle the cat' button click - either make it go to sleep or wake it up */
 function handleToggleButton() {
-    // Toggle cat's behavior
-    var currentState = STATE[StatePartEnum.CatState];
-    if (currentState === CatStateEnum.Running ||
-        currentState === CatStateEnum.Idle) {
+    var catState = STATE[StatePartEnum.CatState];
+    if (catState !== CatStateEnum.Sleeping) {
         STATE[StatePartEnum.CatState] = CatStateEnum.Sleeping;
     }
     else {
@@ -88,9 +86,8 @@ function handleToggleButton() {
     }
     changeCatRenderState();
 }
-/** If cat is not asleep or idle, make it run towards the cursor*/
+/** If cat is not asleep or idle, make it run towards the cursor */
 function makeCatAction() {
-    var cat = document.getElementById("cat");
     if (STATE[StatePartEnum.CatState] === CatStateEnum.Sleeping) {
         // No action, cat sleeps
         return;
@@ -100,6 +97,7 @@ function makeCatAction() {
         x: STATE[StatePartEnum.CursorCoordX],
         y: STATE[StatePartEnum.CursorCoordY],
     };
+    var cat = document.getElementById("cat");
     // Turn coords from `<number>px` strings into numbers
     var catCurrentCoords = {
         x: Number(cat.style.left.split("px")[0]),
@@ -109,7 +107,7 @@ function makeCatAction() {
         Math.pow((catCurrentCoords.y - cursorCoords.y), 2));
     // Radius from cursor within which cat goes to idle state instead of running.
     // We want to increase the radius if cat is already idle - this results in a nice
-    // looking effect where cat waits for cursor to get a little further before getting up again
+    // looking effect where cat waits for cursor to get a little further away before getting up
     var idleModifier = STATE[StatePartEnum.CatState] === CatStateEnum.Idle ? 3.0 : 1.0;
     var IDLE_RADIUS = 20.0 * idleModifier;
     if (distanceToCursor <= IDLE_RADIUS) {
@@ -132,8 +130,8 @@ function makeCatAction() {
         };
         var vectorLength = Math.sqrt(Math.pow(vector.x, 2) + Math.pow(vector.y, 2));
         // If SHIFT is down, cat runs faster
-        var modifier = STATE[StatePartEnum.IsShiftDown] ? 3 : 1;
-        var CAT_SPEED = 2.0 * modifier;
+        var catSpeedModifier = STATE[StatePartEnum.IsShiftDown] ? 3.0 : 1.0;
+        var CAT_SPEED = 2.0 * catSpeedModifier;
         var catNewCoords = {
             x: catCurrentCoords.x + (vector.x / vectorLength) * CAT_SPEED,
             y: catCurrentCoords.y + (vector.y / vectorLength) * CAT_SPEED,

@@ -83,15 +83,11 @@ function changeCatRenderState() {
   }
 }
 
-/** Handle 'toggle' button click */
+/** Handle 'Toggle the cat' button click - either make it go to sleep or wake it up */
 function handleToggleButton(): void {
-  // Toggle cat's behavior
-  const currentState = STATE[StatePartEnum.CatState];
+  const catState = STATE[StatePartEnum.CatState];
 
-  if (
-    currentState === CatStateEnum.Running ||
-    currentState === CatStateEnum.Idle
-  ) {
+  if (catState !== CatStateEnum.Sleeping) {
     STATE[StatePartEnum.CatState] = CatStateEnum.Sleeping;
   } else {
     STATE[StatePartEnum.CatState] = CatStateEnum.Running;
@@ -99,10 +95,8 @@ function handleToggleButton(): void {
   changeCatRenderState();
 }
 
-/** If cat is not asleep or idle, make it run towards the cursor*/
+/** If cat is not asleep or idle, make it run towards the cursor */
 function makeCatAction(): void {
-  const cat = document.getElementById("cat");
-
   if (STATE[StatePartEnum.CatState] === CatStateEnum.Sleeping) {
     // No action, cat sleeps
     return;
@@ -113,6 +107,8 @@ function makeCatAction(): void {
     x: STATE[StatePartEnum.CursorCoordX],
     y: STATE[StatePartEnum.CursorCoordY],
   };
+
+  const cat = document.getElementById("cat");
 
   // Turn coords from `<number>px` strings into numbers
   const catCurrentCoords = {
@@ -127,7 +123,7 @@ function makeCatAction(): void {
 
   // Radius from cursor within which cat goes to idle state instead of running.
   // We want to increase the radius if cat is already idle - this results in a nice
-  // looking effect where cat waits for cursor to get a little further before getting up again
+  // looking effect where cat waits for cursor to get a little further away before getting up
   const idleModifier =
     STATE[StatePartEnum.CatState] === CatStateEnum.Idle ? 3.0 : 1.0;
   const IDLE_RADIUS = 20.0 * idleModifier;
@@ -153,8 +149,8 @@ function makeCatAction(): void {
     const vectorLength = Math.sqrt(vector.x ** 2 + vector.y ** 2);
 
     // If SHIFT is down, cat runs faster
-    const modifier = STATE[StatePartEnum.IsShiftDown] ? 3 : 1;
-    const CAT_SPEED = 2.0 * modifier;
+    const catSpeedModifier = STATE[StatePartEnum.IsShiftDown] ? 3.0 : 1.0;
+    const CAT_SPEED = 2.0 * catSpeedModifier;
 
     const catNewCoords = {
       x: catCurrentCoords.x + (vector.x / vectorLength) * CAT_SPEED,
