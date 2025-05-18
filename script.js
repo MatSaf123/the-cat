@@ -2,27 +2,31 @@ var _a;
 var StatePartEnum;
 (function (StatePartEnum) {
     StatePartEnum[StatePartEnum["CatState"] = 0] = "CatState";
-    StatePartEnum[StatePartEnum["CursorCoordX"] = 1] = "CursorCoordX";
-    StatePartEnum[StatePartEnum["CursorCoordY"] = 2] = "CursorCoordY";
+    StatePartEnum[StatePartEnum["IsShiftDown"] = 1] = "IsShiftDown";
+    StatePartEnum[StatePartEnum["CursorCoordX"] = 2] = "CursorCoordX";
+    StatePartEnum[StatePartEnum["CursorCoordY"] = 3] = "CursorCoordY";
 })(StatePartEnum || (StatePartEnum = {}));
 var CatStateEnum;
 (function (CatStateEnum) {
     CatStateEnum[CatStateEnum["Sleeping"] = 0] = "Sleeping";
     CatStateEnum[CatStateEnum["Running"] = 1] = "Running";
-    CatStateEnum[CatStateEnum["Idle"] = 2] = "Idle";
+    CatStateEnum[CatStateEnum["Sprinting"] = 2] = "Sprinting";
+    CatStateEnum[CatStateEnum["Idle"] = 3] = "Idle";
 })(CatStateEnum || (CatStateEnum = {}));
 var STATE = (_a = {},
     _a[StatePartEnum.CatState] = CatStateEnum.Sleeping,
     _a[StatePartEnum.CursorCoordX] = 0,
     _a[StatePartEnum.CursorCoordY] = 0,
+    _a[StatePartEnum.IsShiftDown] = false,
     _a);
 /**
  * Changes and renders cats animation and the displayed info text
  */
-function renderCatState(state) {
+function changeCatRenderState() {
     var catStateText = document.getElementById("cat-state-text");
     var cat = document.getElementById("cat");
-    switch (state) {
+    var catState = STATE[StatePartEnum.CatState];
+    switch (catState) {
         case CatStateEnum.Sleeping: {
             catStateText.innerHTML = "Cat is sleeping...";
             // Set animation to sleeping
@@ -34,13 +38,24 @@ function renderCatState(state) {
             return;
         }
         case CatStateEnum.Running: {
-            catStateText.innerHTML = "Cat is running!";
-            // Set animation to running
-            cat.style.background = "url('sprites/cat_run.png')";
-            cat.style.animationName = "cat-run";
-            cat.style.animationDuration = "1.5s";
-            cat.style.animationTimingFunction = "steps(8)";
-            cat.style.animationIterationCount = "infinite";
+            if (STATE[StatePartEnum.IsShiftDown]) {
+                catStateText.innerHTML = "Cat is running FAST!";
+                // Set animation to sprinting
+                cat.style.background = "url('sprites/cat_sprint.png')";
+                cat.style.animationName = "cat-sprint";
+                cat.style.animationDuration = "1.0s";
+                cat.style.animationTimingFunction = "steps(8)";
+                cat.style.animationIterationCount = "infinite";
+            }
+            else {
+                catStateText.innerHTML = "Cat is running!";
+                // Set animation to running
+                cat.style.background = "url('sprites/cat_run.png')";
+                cat.style.animationName = "cat-run";
+                cat.style.animationDuration = "1.5s";
+                cat.style.animationTimingFunction = "steps(8)";
+                cat.style.animationIterationCount = "infinite";
+            }
             return;
         }
         case CatStateEnum.Idle: {
@@ -56,7 +71,7 @@ function renderCatState(state) {
             return;
         }
         default: {
-            throw new Error("State \"".concat(state, "\" not recognized"));
+            throw new Error("State \"".concat(catState, "\" not recognized"));
         }
     }
 }
@@ -67,12 +82,11 @@ function handleToggleButton() {
     if (currentState === CatStateEnum.Running ||
         currentState === CatStateEnum.Idle) {
         STATE[StatePartEnum.CatState] = CatStateEnum.Sleeping;
-        renderCatState(CatStateEnum.Sleeping);
     }
     else {
         STATE[StatePartEnum.CatState] = CatStateEnum.Running;
-        renderCatState(CatStateEnum.Running);
     }
+    changeCatRenderState();
 }
 /** If cat is not asleep or idle, make it run towards the cursor*/
 function makeCatAction() {
@@ -99,7 +113,7 @@ function makeCatAction() {
         // Cat goes idle and chills for a bit
         if (STATE[StatePartEnum.CatState] !== CatStateEnum.Idle) {
             STATE[StatePartEnum.CatState] = CatStateEnum.Idle;
-            renderCatState(CatStateEnum.Idle);
+            changeCatRenderState();
         }
         return;
     }
@@ -107,14 +121,16 @@ function makeCatAction() {
         // Bring cat closer to the cursor
         if (STATE[StatePartEnum.CatState] !== CatStateEnum.Running) {
             STATE[StatePartEnum.CatState] = CatStateEnum.Running;
-            renderCatState(CatStateEnum.Running);
+            changeCatRenderState();
         }
         var vector = {
             x: cursorCoords.x - catCurrentCoords.x,
             y: cursorCoords.y - catCurrentCoords.y,
         };
         var vectorLength = Math.sqrt(Math.pow(vector.x, 2) + Math.pow(vector.y, 2));
-        var CAT_SPEED = 2.0;
+        // If SHIFT is down, cat runs faster
+        var modifier = STATE[StatePartEnum.IsShiftDown] ? 3 : 1;
+        var CAT_SPEED = 2.0 * modifier;
         var catNewCoords = {
             x: catCurrentCoords.x + (vector.x / vectorLength) * CAT_SPEED,
             y: catCurrentCoords.y + (vector.y / vectorLength) * CAT_SPEED,
@@ -140,6 +156,20 @@ onpointermove = function (event) {
     var cursorCoords = { x: event.clientX, y: event.clientY };
     STATE[StatePartEnum.CursorCoordX] = cursorCoords.x;
     STATE[StatePartEnum.CursorCoordY] = cursorCoords.y;
+};
+/** Make cat run faster when SHIFT key is down */
+onkeydown = function (event) {
+    if (event.key === "Shift") {
+        STATE[StatePartEnum.IsShiftDown] = true;
+        changeCatRenderState();
+    }
+};
+/** Make cat run in a normal speed when SHIFT key is lifted */
+onkeyup = function (event) {
+    if (event.key === "Shift") {
+        STATE[StatePartEnum.IsShiftDown] = false;
+        changeCatRenderState();
+    }
 };
 /** Cat makes action every 24ms */
 window.setInterval(makeCatAction, 24);

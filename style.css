@@ -24,6 +24,10 @@
   to { background-position: 256px }
 }
 
+@keyframes cat-sprint{
+  to { background-position: 256px }
+}
+
 @keyframes cat-idle{
   to { background-position: 128px }
 }

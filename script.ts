@@ -1,5 +1,6 @@
 enum StatePartEnum {
   CatState,
+  IsShiftDown,
   CursorCoordX,
   CursorCoordY,
 }
@@ -7,6 +8,7 @@ enum StatePartEnum {
 enum CatStateEnum {
   Sleeping,
   Running,
+  Sprinting,
   Idle,
 }
 
@@ -14,16 +16,19 @@ const STATE = {
   [StatePartEnum.CatState]: CatStateEnum.Sleeping, // Cat sleeps by default - a very cat thing to do
   [StatePartEnum.CursorCoordX]: 0,
   [StatePartEnum.CursorCoordY]: 0,
+  [StatePartEnum.IsShiftDown]: false,
 } satisfies Record<StatePartEnum, unknown>;
 
 /**
  * Changes and renders cats animation and the displayed info text
  */
-function renderCatState(state: CatStateEnum) {
+function changeCatRenderState() {
   const catStateText = document.getElementById("cat-state-text");
   const cat = document.getElementById("cat");
 
-  switch (state) {
+  const catState = STATE[StatePartEnum.CatState];
+
+  switch (catState) {
     case CatStateEnum.Sleeping: {
       catStateText.innerHTML = "Cat is sleeping...";
 
@@ -36,14 +41,26 @@ function renderCatState(state: CatStateEnum) {
       return;
     }
     case CatStateEnum.Running: {
-      catStateText.innerHTML = "Cat is running!";
+      if (STATE[StatePartEnum.IsShiftDown]) {
+        catStateText.innerHTML = "Cat is running FAST!";
 
-      // Set animation to running
-      cat.style.background = "url('sprites/cat_run.png')";
-      cat.style.animationName = "cat-run";
-      cat.style.animationDuration = "1.5s";
-      cat.style.animationTimingFunction = "steps(8)";
-      cat.style.animationIterationCount = "infinite";
+        // Set animation to sprinting
+        cat.style.background = "url('sprites/cat_sprint.png')";
+        cat.style.animationName = "cat-sprint";
+        cat.style.animationDuration = "1.0s";
+        cat.style.animationTimingFunction = "steps(8)";
+        cat.style.animationIterationCount = "infinite";
+      } else {
+        catStateText.innerHTML = "Cat is running!";
+
+        // Set animation to running
+        cat.style.background = "url('sprites/cat_run.png')";
+        cat.style.animationName = "cat-run";
+        cat.style.animationDuration = "1.5s";
+        cat.style.animationTimingFunction = "steps(8)";
+        cat.style.animationIterationCount = "infinite";
+      }
+
       return;
     }
     case CatStateEnum.Idle: {
@@ -61,7 +78,7 @@ function renderCatState(state: CatStateEnum) {
       return;
     }
     default: {
-      throw new Error(`State "${state}" not recognized`);
+      throw new Error(`State "${catState}" not recognized`);
     }
   }
 }
@@ -76,11 +93,10 @@ function handleToggleButton(): void {
     currentState === CatStateEnum.Idle
   ) {
     STATE[StatePartEnum.CatState] = CatStateEnum.Sleeping;
-    renderCatState(CatStateEnum.Sleeping);
   } else {
     STATE[StatePartEnum.CatState] = CatStateEnum.Running;
-    renderCatState(CatStateEnum.Running);
   }
+  changeCatRenderState();
 }
 
 /** If cat is not asleep or idle, make it run towards the cursor*/
@@ -116,14 +132,14 @@ function makeCatAction(): void {
     // Cat goes idle and chills for a bit
     if (STATE[StatePartEnum.CatState] !== CatStateEnum.Idle) {
       STATE[StatePartEnum.CatState] = CatStateEnum.Idle;
-      renderCatState(CatStateEnum.Idle);
+      changeCatRenderState();
     }
     return;
   } else {
     // Bring cat closer to the cursor
     if (STATE[StatePartEnum.CatState] !== CatStateEnum.Running) {
       STATE[StatePartEnum.CatState] = CatStateEnum.Running;
-      renderCatState(CatStateEnum.Running);
+      changeCatRenderState();
     }
 
     const vector = {
@@ -132,7 +148,9 @@ function makeCatAction(): void {
     };
     const vectorLength = Math.sqrt(vector.x ** 2 + vector.y ** 2);
 
-    const CAT_SPEED = 2.0;
+    // If SHIFT is down, cat runs faster
+    const modifier = STATE[StatePartEnum.IsShiftDown] ? 3 : 1;
+    const CAT_SPEED = 2.0 * modifier;
 
     const catNewCoords = {
       x: catCurrentCoords.x + (vector.x / vectorLength) * CAT_SPEED,
@@ -161,6 +179,22 @@ onpointermove = (event) => {
   const cursorCoords = { x: event.clientX, y: event.clientY };
   STATE[StatePartEnum.CursorCoordX] = cursorCoords.x;
   STATE[StatePartEnum.CursorCoordY] = cursorCoords.y;
+};
+
+/** Make cat run faster when SHIFT key is down */
+onkeydown = (event) => {
+  if (event.key === "Shift") {
+    STATE[StatePartEnum.IsShiftDown] = true;
+    changeCatRenderState();
+  }
+};
+
+/** Make cat run in a normal speed when SHIFT key is lifted */
+onkeyup = (event) => {
+  if (event.key === "Shift") {
+    STATE[StatePartEnum.IsShiftDown] = false;
+    changeCatRenderState();
+  }
 };
 
 /** Cat makes action every 24ms */
