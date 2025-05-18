@@ -1,10 +1,10 @@
 var _a;
-var StateFlagEnum;
-(function (StateFlagEnum) {
-    StateFlagEnum[StateFlagEnum["CatState"] = 0] = "CatState";
-    StateFlagEnum[StateFlagEnum["CursorCoordX"] = 1] = "CursorCoordX";
-    StateFlagEnum[StateFlagEnum["CursorCoordY"] = 2] = "CursorCoordY";
-})(StateFlagEnum || (StateFlagEnum = {}));
+var StatePartEnum;
+(function (StatePartEnum) {
+    StatePartEnum[StatePartEnum["CatState"] = 0] = "CatState";
+    StatePartEnum[StatePartEnum["CursorCoordX"] = 1] = "CursorCoordX";
+    StatePartEnum[StatePartEnum["CursorCoordY"] = 2] = "CursorCoordY";
+})(StatePartEnum || (StatePartEnum = {}));
 var CatStateEnum;
 (function (CatStateEnum) {
     CatStateEnum[CatStateEnum["Sleeping"] = 0] = "Sleeping";
@@ -12,9 +12,9 @@ var CatStateEnum;
     CatStateEnum[CatStateEnum["Idle"] = 2] = "Idle";
 })(CatStateEnum || (CatStateEnum = {}));
 var STATE = (_a = {},
-    _a[StateFlagEnum.CatState] = CatStateEnum.Sleeping,
-    _a[StateFlagEnum.CursorCoordX] = 0,
-    _a[StateFlagEnum.CursorCoordY] = 0,
+    _a[StatePartEnum.CatState] = CatStateEnum.Sleeping,
+    _a[StatePartEnum.CursorCoordX] = 0,
+    _a[StatePartEnum.CursorCoordY] = 0,
     _a);
 /**
  * Changes and renders cats animation and the displayed info text
@@ -63,34 +63,28 @@ function renderCatState(state) {
 /** Handle 'toggle' button click */
 function handleToggleButton() {
     // Toggle cat's behavior
-    var currentState = STATE[StateFlagEnum.CatState];
+    var currentState = STATE[StatePartEnum.CatState];
     if (currentState === CatStateEnum.Running ||
         currentState === CatStateEnum.Idle) {
-        STATE[StateFlagEnum.CatState] = CatStateEnum.Sleeping;
+        STATE[StatePartEnum.CatState] = CatStateEnum.Sleeping;
         renderCatState(CatStateEnum.Sleeping);
     }
     else {
-        STATE[StateFlagEnum.CatState] = CatStateEnum.Running;
+        STATE[StatePartEnum.CatState] = CatStateEnum.Running;
         renderCatState(CatStateEnum.Running);
     }
 }
-/** Put new cursor coords into the state so cat could pick them up */
-addEventListener("pointermove", function (event) {
-    var cursorCoords = { x: event.clientX, y: event.clientY };
-    STATE[StateFlagEnum.CursorCoordX] = cursorCoords.x;
-    STATE[StateFlagEnum.CursorCoordY] = cursorCoords.y;
-});
 /** If cat is not asleep or idle, make it run towards the cursor*/
 function makeCatAction() {
     var cat = document.getElementById("cat");
-    if (STATE[StateFlagEnum.CatState] === CatStateEnum.Sleeping) {
+    if (STATE[StatePartEnum.CatState] === CatStateEnum.Sleeping) {
         // No action, cat sleeps
         return;
     }
     // Check if cat should move or if it's idle
     var cursorCoords = {
-        x: STATE[StateFlagEnum.CursorCoordX],
-        y: STATE[StateFlagEnum.CursorCoordY],
+        x: STATE[StatePartEnum.CursorCoordX],
+        y: STATE[StatePartEnum.CursorCoordY],
     };
     // Turn them from `<number>px` strings into numbers
     var catCurrentCoords = {
@@ -103,16 +97,16 @@ function makeCatAction() {
     var IDLE_RADIUS = 20.0;
     if (distanceToCursor <= IDLE_RADIUS) {
         // Cat goes idle and chills for a bit
-        if (STATE[StateFlagEnum.CatState] !== CatStateEnum.Idle) {
-            STATE[StateFlagEnum.CatState] = CatStateEnum.Idle;
+        if (STATE[StatePartEnum.CatState] !== CatStateEnum.Idle) {
+            STATE[StatePartEnum.CatState] = CatStateEnum.Idle;
             renderCatState(CatStateEnum.Idle);
         }
         return;
     }
     else {
         // Bring cat closer to the cursor
-        if (STATE[StateFlagEnum.CatState] !== CatStateEnum.Running) {
-            STATE[StateFlagEnum.CatState] = CatStateEnum.Running;
+        if (STATE[StatePartEnum.CatState] !== CatStateEnum.Running) {
+            STATE[StatePartEnum.CatState] = CatStateEnum.Running;
             renderCatState(CatStateEnum.Running);
         }
         var vector = {
@@ -141,6 +135,12 @@ function makeCatAction() {
         }
     }
 }
+/** Put new cursor coords into the state so cat could pick them up */
+onpointermove = function (event) {
+    var cursorCoords = { x: event.clientX, y: event.clientY };
+    STATE[StatePartEnum.CursorCoordX] = cursorCoords.x;
+    STATE[StatePartEnum.CursorCoordY] = cursorCoords.y;
+};
 /** Cat makes action every 24ms */
 window.setInterval(makeCatAction, 24);
 window.onload = function () {

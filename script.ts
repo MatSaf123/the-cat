@@ -1,4 +1,4 @@
-enum StateFlagEnum {
+enum StatePartEnum {
   CatState,
   CursorCoordX,
   CursorCoordY,
@@ -11,10 +11,10 @@ enum CatStateEnum {
 }
 
 const STATE = {
-  [StateFlagEnum.CatState]: CatStateEnum.Sleeping, // Cat sleeps by default - a very cat thing to do
-  [StateFlagEnum.CursorCoordX]: 0,
-  [StateFlagEnum.CursorCoordY]: 0,
-} satisfies Record<StateFlagEnum, unknown>;
+  [StatePartEnum.CatState]: CatStateEnum.Sleeping, // Cat sleeps by default - a very cat thing to do
+  [StatePartEnum.CursorCoordX]: 0,
+  [StatePartEnum.CursorCoordY]: 0,
+} satisfies Record<StatePartEnum, unknown>;
 
 /**
  * Changes and renders cats animation and the displayed info text
@@ -69,40 +69,33 @@ function renderCatState(state: CatStateEnum) {
 /** Handle 'toggle' button click */
 function handleToggleButton(): void {
   // Toggle cat's behavior
-  const currentState = STATE[StateFlagEnum.CatState];
+  const currentState = STATE[StatePartEnum.CatState];
 
   if (
     currentState === CatStateEnum.Running ||
     currentState === CatStateEnum.Idle
   ) {
-    STATE[StateFlagEnum.CatState] = CatStateEnum.Sleeping;
+    STATE[StatePartEnum.CatState] = CatStateEnum.Sleeping;
     renderCatState(CatStateEnum.Sleeping);
   } else {
-    STATE[StateFlagEnum.CatState] = CatStateEnum.Running;
+    STATE[StatePartEnum.CatState] = CatStateEnum.Running;
     renderCatState(CatStateEnum.Running);
   }
 }
-
-/** Put new cursor coords into the state so cat could pick them up */
-addEventListener("pointermove", (event) => {
-  const cursorCoords = { x: event.clientX, y: event.clientY };
-  STATE[StateFlagEnum.CursorCoordX] = cursorCoords.x;
-  STATE[StateFlagEnum.CursorCoordY] = cursorCoords.y;
-});
 
 /** If cat is not asleep or idle, make it run towards the cursor*/
 function makeCatAction(): void {
   const cat = document.getElementById("cat");
 
-  if (STATE[StateFlagEnum.CatState] === CatStateEnum.Sleeping) {
+  if (STATE[StatePartEnum.CatState] === CatStateEnum.Sleeping) {
     // No action, cat sleeps
     return;
   }
 
   // Check if cat should move or if it's idle
   const cursorCoords = {
-    x: STATE[StateFlagEnum.CursorCoordX],
-    y: STATE[StateFlagEnum.CursorCoordY],
+    x: STATE[StatePartEnum.CursorCoordX],
+    y: STATE[StatePartEnum.CursorCoordY],
   };
 
   // Turn them from `<number>px` strings into numbers
@@ -121,15 +114,15 @@ function makeCatAction(): void {
 
   if (distanceToCursor <= IDLE_RADIUS) {
     // Cat goes idle and chills for a bit
-    if (STATE[StateFlagEnum.CatState] !== CatStateEnum.Idle) {
-      STATE[StateFlagEnum.CatState] = CatStateEnum.Idle;
+    if (STATE[StatePartEnum.CatState] !== CatStateEnum.Idle) {
+      STATE[StatePartEnum.CatState] = CatStateEnum.Idle;
       renderCatState(CatStateEnum.Idle);
     }
     return;
   } else {
     // Bring cat closer to the cursor
-    if (STATE[StateFlagEnum.CatState] !== CatStateEnum.Running) {
-      STATE[StateFlagEnum.CatState] = CatStateEnum.Running;
+    if (STATE[StatePartEnum.CatState] !== CatStateEnum.Running) {
+      STATE[StatePartEnum.CatState] = CatStateEnum.Running;
       renderCatState(CatStateEnum.Running);
     }
 
@@ -162,6 +155,13 @@ function makeCatAction(): void {
     }
   }
 }
+
+/** Put new cursor coords into the state so cat could pick them up */
+onpointermove = (event) => {
+  const cursorCoords = { x: event.clientX, y: event.clientY };
+  STATE[StatePartEnum.CursorCoordX] = cursorCoords.x;
+  STATE[StatePartEnum.CursorCoordY] = cursorCoords.y;
+};
 
 /** Cat makes action every 24ms */
 window.setInterval(makeCatAction, 24);
